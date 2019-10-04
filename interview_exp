@@ -1,0 +1,30 @@
+---
+		   - hosts: all
+		     become: true
+			 vars:
+			    loginservername: vip-li-frk.company.com when: location==frk
+				loginservername: vip-li-vie.company.com when: location==vie
+				ostype: deb when: ansible_distribution == "Debian"
+				ostype: rpm when: ansible_distirbution == "RedHat" or ansible_distribution == "OEL"
+			tasks:
+			   - name: install login client package_type
+			     yum: name=loginsigh-1.2.3.rpm state=present 
+				 when: ansible_distirbution == "RedHat" or ansible_distribution == "OEL"
+				 register: Install_log_rpm
+				 
+			    - name: install login client package_type
+			      dpkg: name=loginsigh-1.2.3.deb state=present 
+				  when: ansible_distirbution == "Debian"
+				  register: Install_log_deb
+				  
+				 - name: starting login service
+				   service: name=liagentd start=started enabled=yes
+				   when: Install_log_deb|succees or Install_log_rpm|success
+				   
+				 - name: updating the configuration files
+				   template: src=liagent.ini.j2 dest=/var/lib/loginsight-agent/liagent.ini
+				   notify:
+				     - restart_loginagent
+					 
+				
+			
